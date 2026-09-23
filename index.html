@@ -1,1 +1,628 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IUM 2030 — Implementation Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B2A41;
+    --ink-soft:#4B5A70;
+    --paper:#EEEEE6;
+    --card:#FBFAF6;
+    --line:#D8D6CB;
+    --gold:#A9803F;
+    --teal:#2F6B62;
+    --raised-shadow: 0 1px 2px rgba(27,42,65,0.06), 0 6px 20px rgba(27,42,65,0.06);
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --ink:#EDEBE3; --ink-soft:#B9BFC9; --paper:#161A22; --card:#1E232D; --line:#333a47;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#EDEBE3; --ink-soft:#B9BFC9; --paper:#161A22; --card:#1E232D; --line:#333a47;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  a{color:inherit;}
+  .wrap{ max-width:1080px; margin:0 auto; padding:0 24px 96px; }
+
+  header.masthead{ padding:52px 0 30px; border-bottom:1px solid var(--line); margin-bottom:26px; }
+  .eyebrow-row{ display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:16px; font-size:14px; color:var(--ink-soft); }
+  h1{ font-family:'Newsreader', serif; font-weight:600; font-size:clamp(32px,5vw,50px); line-height:1.08; margin:0 0 12px; letter-spacing:-0.01em; }
+  h1 em{ font-style:italic; font-weight:500; color:var(--gold); }
+  .lede{ font-size:16.5px; color:var(--ink-soft); max-width:68ch; margin:0; }
+  .scope-strip{ display:flex; gap:26px; margin-top:24px; flex-wrap:wrap; }
+  .scope-item .num{ font-family:'Newsreader',serif; font-size:24px; font-weight:600; color:var(--teal); display:block; }
+  .scope-item .lab{ font-size:12px; color:var(--ink-soft); }
+
+  .controls-bar{
+    position:sticky; top:0; z-index:20; background:var(--paper);
+    padding:14px 0; border-bottom:1px solid var(--line); margin-bottom:8px;
+  }
+  .controls-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+  .controls-row .expand-toggle{
+    font-size:13px; font-weight:600; color:var(--ink-soft); background:transparent;
+    border:1px solid var(--line); border-radius:100px; padding:7px 14px; cursor:pointer;
+  }
+  .controls-row .expand-toggle:hover{ border-color:var(--ink-soft); }
+  nav.jump{ display:flex; gap:6px; flex-wrap:wrap; }
+  nav.jump a{
+    font-size:12.5px; font-weight:700; text-decoration:none; color:var(--nc,var(--ink-soft));
+    background:color-mix(in srgb, var(--nc, var(--ink-soft)) 13%, transparent);
+    border-radius:100px; padding:6px 12px; transition:background .15s ease; white-space:nowrap;
+  }
+  nav.jump a:hover{ background:color-mix(in srgb, var(--nc, var(--ink-soft)) 24%, transparent); }
+  nav.jump a .cnt{ opacity:.75; font-weight:500; }
+
+  .unit-section{ margin-bottom:14px; scroll-margin-top:110px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--card); }
+  .unit-head{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:18px 20px;
+    cursor:pointer; user-select:none; border-left:5px solid var(--uc, var(--teal));
+  }
+  .unit-head:hover{ background:color-mix(in srgb, var(--uc, var(--teal)) 6%, transparent); }
+  .unit-head h2{ font-family:'Newsreader',serif; font-weight:600; font-size:22px; margin:0; flex:1; min-width:180px; }
+  .unit-code{ font-size:11.5px; font-weight:700; color:#fff; background:var(--uc, var(--teal)); padding:3px 10px; border-radius:100px; }
+  .unit-count{ font-size:12.5px; color:var(--ink-soft); white-space:nowrap; }
+  .unit-chevron{ font-size:13px; color:var(--ink-soft); transition:transform .18s ease; }
+  .unit-section.open .unit-chevron{ transform:rotate(90deg); }
+
+  .unit-body{ display:none; padding:4px 20px 20px; }
+  .unit-section.open .unit-body{ display:block; }
+
+  .ruler-row{ display:grid; grid-template-columns:230px 1fr; gap:20px; margin-bottom:4px; padding-top:6px; }
+  .ruler-track{ position:relative; height:20px; }
+  .ruler-track .tick{ position:absolute; top:0; transform:translateX(-50%); font-size:10.5px; font-weight:600; color:var(--ink-soft); }
+  @media (max-width:680px){ .ruler-row{ display:none; } }
+
+  .task-row{ display:grid; grid-template-columns:230px 1fr; gap:20px; padding:13px 0; border-bottom:1px solid var(--line); align-items:center; }
+  .task-row:last-child{ border-bottom:none; }
+  .track{ position:relative; height:30px; }
+  .track .gridline{ position:absolute; top:0; bottom:0; width:1px; background:var(--line); }
+  .track .bar{ position:absolute; top:10px; height:9px; border-radius:6px; background:var(--uc, var(--teal)); opacity:.85; }
+  .track .dot{ position:absolute; top:7px; width:15px; height:15px; border-radius:50%; background:var(--uc, var(--teal)); transform:translateX(-50%); border:3px solid var(--card); box-shadow:0 0 0 1.5px var(--uc, var(--teal)); }
+  .track .seg-label{ position:absolute; top:-15px; font-size:10px; font-weight:700; color:var(--uc, var(--teal)); white-space:nowrap; transform:translateX(-50%); }
+  @media (max-width:680px){ .task-row{ grid-template-columns:1fr; gap:6px; } }
+
+  .detail .task-top{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+  .detail .task-code{ font-size:10.5px; font-weight:700; color:var(--ink-soft); letter-spacing:0.02em; }
+  .detail .thrust-chip{ font-size:10px; color:var(--ink-soft); background:var(--line); padding:1px 8px; border-radius:100px; }
+  .detail .joint-chip{ font-size:10px; color:var(--uc,var(--teal)); border:1px solid var(--uc,var(--teal)); padding:1px 8px; border-radius:100px; }
+  .detail .task-title{ font-size:14.5px; font-weight:500; margin-bottom:6px; }
+  .detail .task-meta{ display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--ink-soft); }
+  .detail .task-meta b{ color:var(--ink); font-weight:600; }
+
+  .legend-section{ margin-top:44px; padding-top:34px; border-top:1px solid var(--line); }
+  .legend-section h2{ font-family:'Newsreader',serif; font-size:22px; font-weight:600; margin:0 0 10px; }
+  .legend-note{ font-size:13px; color:var(--ink-soft); max-width:72ch; margin:0 0 20px; }
+  .legend-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px 20px; }
+  @media (max-width:760px){ .legend-grid{ grid-template-columns:1fr; } }
+  .legend-row{ display:flex; align-items:baseline; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .legend-row .lg-code{ font-weight:700; min-width:44px; color:var(--lc, var(--ink-soft)); }
+  .legend-row .lg-name{ flex:1; }
+  .legend-row .lg-flag{ font-size:10.5px; color:var(--ink-soft); white-space:nowrap; }
+  .legend-row.has-tasks .lg-flag{ color:var(--lc, var(--teal)); font-weight:700; }
+
+  footer{ margin-top:26px; padding-top:20px; border-top:1px solid var(--line); font-size:12px; color:var(--ink-soft); }
+  footer p{ margin:0 0 8px; }
+
+  .joint-section{ margin-top:44px; padding-top:34px; border-top:1px solid var(--line); }
+  .joint-section h2{ font-family:'Newsreader',serif; font-size:22px; font-weight:600; margin:0 0 10px; }
+  .joint-row{
+    display:grid; grid-template-columns:230px 1fr; gap:20px; padding:16px 18px;
+    border:1px solid var(--line); border-radius:10px; background:var(--card);
+    margin-bottom:10px; box-shadow:var(--raised-shadow); align-items:center;
+  }
+  @media (max-width:680px){ .joint-row{ grid-template-columns:1fr; gap:10px; } }
+  .joint-row .track{ position:relative; height:30px; }
+  .joint-pics{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  .joint-pic-chip{
+    font-size:11px; font-weight:700; color:#fff; padding:3px 10px; border-radius:100px;
+  }
+
+  ::selection{ background: color-mix(in srgb, var(--teal) 30%, transparent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow-row">
+      <span>IUM 2030 Strategic Plan</span>
+      <span>All 7 thrusts · Full plan</span>
+    </div>
+    <h1>Implementation <em>manual</em></h1>
+    <p class="lede">Every responsible unit's tasks, laid out on its own five-year timeline — what to deliver, how success is measured, and by when. Covers the full plan, not just one thrust.</p>
+    <div class="scope-strip" id="scope-strip"></div>
+  </header>
+
+  <div class="controls-bar">
+    <div class="controls-row">
+      <button class="expand-toggle" id="expandAllBtn">Expand all</button>
+      <span style="font-size:12px;color:var(--ink-soft)">Click a unit to open its timeline</span>
+    </div>
+    <nav class="jump" id="jumpnav"></nav>
+  </div>
+
+  <div id="units"></div>
+
+  <div class="legend-section">
+    <h2>All responsible units</h2>
+    <p class="legend-note">The full list of 21 units at IUM. Every one of them carries at least one task somewhere across the seven thrusts of this plan.</p>
+    <div class="legend-grid" id="legend-grid"></div>
+  </div>
+
+  <div class="joint-section" id="joint-section">
+    <h2>Joint tasks — shared across multiple units</h2>
+    <p class="legend-note">These actions name more than one responsible unit in the source plan. They also appear on each named unit's own timeline above, tagged "joint" — this list gathers all of them in one place so any two units can see what they need to coordinate on together.</p>
+    <div id="joint-list"></div>
+  </div>
+
+  <footer>
+    <p>Source: IUM 2030 strategic action plan, all sheets (International Positioning; Excellence in Education; Excellence in Research, Consultancy & Training; Commitment to Nation Building & Community Engagement; Digital Transformation & Modern Infrastructure; Governance, Leadership & Talent Development; Financial Independence & Sustainability), plus the acronym key.</p>
+    <p>Where a task lists more than one unit in the source (e.g. "HR, AA"), it appears on both units' timelines with a "joint" tag. Two rows in the source ("FM, HR") used a unit code not in the acronym key — treated here as Facilities & Administration (FA), the closest match. Rows that were exact duplicates in the source sheet were merged into one.</p>
+  </footer>
+</div>
+
+<script>
+// ---------------------------------------------------------------
+// Unit directory (source: acronym key)
+// ---------------------------------------------------------------
+const ALL_UNITS = [
+  { code:"AA",   name:"Academic Affairs" },
+  { code:"AF",   name:"Administration & Finance" },
+  { code:"FA",   name:"Facilities & Administration" },
+  { code:"CB",   name:"Chancellery Bureau" },
+  { code:"CD",   name:"Curriculum Development" },
+  { code:"CCE",  name:"Center for Continuing Education" },
+  { code:"CPS",  name:"Center for Postgraduate Studies" },
+  { code:"CRP",  name:"Center for Research & Publication" },
+  { code:"DOK",  name:"Deans of Kulliyah" },
+  { code:"HR",   name:"Human Resources" },
+  { code:"ICT",  name:"Information & Communication Technology" },
+  { code:"IEQI", name:"Institutional Effectiveness & Quality Improvement" },
+  { code:"KEMS", name:"Kulliyah of Economics & Management Studies" },
+  { code:"KSL",  name:"Kulliyah of Shari'ah & Law" },
+  { code:"LIB",  name:"Library" },
+  { code:"LIR",  name:"Local & International Relations" },
+  { code:"MKT",  name:"Marketing" },
+  { code:"R&I",  name:"Research & Innovation" },
+  { code:"SA",   name:"Student Affairs" },
+  { code:"SSS",  name:"Student Support Services" },
+  { code:"P",    name:"Procurement" },
+];
+
+const PALETTE = ["#A9803F","#2F6B62","#7A4B3A","#3B5B8C","#5B4B8A","#8A6D3B","#4B6B4B","#8A3B4B",
+  "#3B7A8A","#8A5B3B","#5B8A3B","#8A3B7A","#3B4B8A","#6B8A3B","#8A6B3B","#3B8A6B","#7A3B8A","#8A4B3B","#3B6B8A","#6B3B8A","#8A8A3B"];
+const COLOR = {};
+ALL_UNITS.forEach((u,i)=>{ COLOR[u.code] = PALETTE[i % PALETTE.length]; });
+
+function colorFor(pic){ return COLOR[pic] || "#4B5A70"; }
+function nameFor(pic){ const u = ALL_UNITS.find(x=>x.code===pic); return u ? u.name : pic; }
+function slugFor(pic){ return pic.replace(/[^a-z0-9]/gi,'-').toLowerCase(); }
+
+// ---------------------------------------------------------------
+// Full task database — all 7 thrusts
+// pic: array of unit codes; note: optional extra context (e.g. "+ relevant Kulliyyah")
+// ---------------------------------------------------------------
+const THRUSTS = {
+  L: "Thrust 1 · International Positioning",
+  E: "Thrust 2 · Excellence in Education",
+  A: "Thrust 3 · Excellence in Research, Consultancy & Training",
+  D: "Thrust 4 · Commitment to Nation Building & Community Engagement",
+  I: "Thrust 5 · Digital Transformation & Modern Infrastructure",
+  N: "Thrust 6 · Governance, Leadership & Talent Development",
+  G: "Thrust 7 · Financial Independence & Sustainability",
+};
+
+const TASKS = [
+// ================= L: International Positioning =================
+{code:"SA1.1.1",thrust:"L",pic:["MKT"],title:"Redesign the university website and consolidate application processes into a single, mobile-friendly platform.",pi:"Website redesign completion rate",target:"100% completion",due:"Mid 2026"},
+{code:"SA1.1.10",thrust:"L",pic:["AA"],title:"Introduce the International Student Learning Journey (ISLJ) guideline to support IUM's international promotion.",pi:"Guideline completion rate",target:"100% completion",due:"2026"},
+{code:"SA1.1.11",thrust:"L",pic:["AA"],title:"Create digital learning materials to support online and blended programmes.",pi:"Amount of digital learning materials produced",target:"60% completion",due:"2027"},
+{code:"SA1.1.12",thrust:"L",pic:["AA"],title:"Convert all, or most, learning programmes to online or blended format.",pi:"Number of programmes converted",target:"70% completion",due:"2029"},
+{code:"SA1.1.13",thrust:"L",pic:["IEQI"],title:"Explore the proposal for IUM to undertake a ranking exercise (e.g. Islamic ranking, QS Asia) and assess its value.",pi:"Feasibility report completion; ranking submission status",target:"Report by 2027; submitted by 2028",due:"2027"},
+{code:"SA1.1.2",thrust:"L",pic:["MKT"],title:"Develop a 5-year university marketing and rebranding plan to lift visibility physically and digitally.",pi:"Plan approval status; brand visibility metrics",target:"Approved by Q4 2026; 30% visibility increase",due:"2026"},
+{code:"SA1.1.3",thrust:"L",pic:["LIR"],title:"List IUM with the Association of Commonwealth Universities, alongside comparable listings.",pi:"Membership application submission; approval status",target:"Submitted by 2026; approved by 2027",due:"2027"},
+{code:"SA1.1.4",thrust:"L",pic:["LIR"],title:"Launch the IUM Global Thought Leadership Series to engage renowned scholars and public figures (physical + virtual).",pi:"Number of events hosted",target:"12+ events/year",due:"2027"},
+{code:"SA1.1.5",thrust:"L",pic:["LIR","R&I"],title:"Establish the IUM Global Media Fellowship (20+ journalists, agencies and participants).",pi:"Media partners onboarded; media coverage volume",target:"30+ partners; 30+ articles/year",due:"2029"},
+{code:"SA1.1.6",thrust:"L",pic:["LIR"],title:"Form a university-level committee to run the rebranding exercise for global repositioning.",pi:"Committee formation status; rebranding report completion",target:"Formed by 2026; report by 2027",due:"2027"},
+{code:"SA1.1.7",thrust:"L",pic:["ICT","MKT"],title:"Create digital campus tours for global audiences to attract students and researchers.",pi:"Digital platform launch status; user adoption rate",target:"Launched by 2027; 30% student usage by 2028",due:"2028"},
+{code:"SA1.1.8",thrust:"L",pic:["ICT"],title:"Develop an AI-powered \"Islamic Knowledge Assistant\" chatbot.",pi:"Chatbot deployment status",target:"Deployed by 2029",due:"2028"},
+{code:"SA1.1.9",thrust:"L",pic:["LIB"],title:"Grow the Islamic Digital Library collection (1000+ multilingual resources).",pi:"Resources added, count",target:"500+ resources",due:"2029"},
+{code:"SA1.2.1",thrust:"L",pic:["CB"],title:"Establish the IUM International Advisory Board (national figures / OIC / ISESCO / Federation of Islamic Universities members).",pi:"Board member recruitment; meets once every two years",target:"7 members",due:"2027"},
+{code:"SA1.2.2",thrust:"L",pic:["IEQI"],title:"Conduct a biennial Stakeholder Perception Audit.",pi:"Audit completion rate",target:"100% completion",due:"2028"},
+{code:"SA2.1.2",thrust:"L",pic:["LIR"],title:"Create a Faculty Exchange Fellowship.",pi:"Fellowships activated per year",target:"3–5/year",due:"2026-2030"},
+{code:"SA2.1.3",thrust:"L",pic:["CRP"],title:"Introduce a Joint Research Seed Fund.",pi:"Fund allocation rate; research projects funded",target:"MVR100K/year; 3–5+ projects/year",due:"2027-2030"},
+{code:"SA2.1.4",thrust:"L",pic:["LIR"],title:"Promote community awareness of Islamic values and ethics, in collaboration with international and local institutions.",pi:"Community events hosted",target:"10+ events/year",due:"2026-2030"},
+{code:"SA2.1.5",thrust:"L",pic:["AA"],title:"Launch the Global Islamic Studies Dual Degree Program with partner institutions.",pi:"Partner agreements signed; student enrolment rate",target:"3–5 partners; 50+ students/year",due:"2027-2030"},
+{code:"SA2.1.6",thrust:"L",pic:["LIR"],title:"Sign MoUs and MoAs with top universities for academic and research collaboration.",pi:"MoUs signed per year; active collaborations",target:"5+ MoUs/year; 80% active",due:"2026-2030"},
+{code:"SA2.1.7",thrust:"L",pic:["LIR"],title:"Sign MoUs and MoAs with industry partners.",pi:"MoUs signed per year; active collaborations",target:"5+ MoUs/year; 80% active",due:"2026-2030"},
+{code:"SA2.2.1",thrust:"L",pic:["AA"],title:"Develop the IUM Online Campus.",pi:"Programmes launched; student enrolment rate",target:"3–5 programmes; 100+ students",due:"2027-2029"},
+{code:"SA2.2.2",thrust:"L",pic:["AA"],title:"Launch a Micro-Credentials offering.",pi:"Certificates developed; completion rate",target:"5–10 certificates; 50% completion",due:"2027-2030"},
+
+// ================= E: Excellence in Education =================
+{code:"SA3.1.1",thrust:"E",pic:["AA"],title:"Form a university-level committee to produce a guideline for integrating Islamization concepts into all programmes and courses.",pi:"Committee formation status; guideline completion rate",target:"100% formed & completed",due:"2026"},
+{code:"SA3.1.10",thrust:"E",pic:["IEQI"],title:"Strengthen and follow academic quality assurance standards in the formation, delivery and evaluation of programmes/courses.",pi:"AQA audits completed",target:"1 audit/year; 70% compliance",due:"2026-2030"},
+{code:"SA3.1.11",thrust:"E",pic:["KEMS"],title:"Develop an Islamic Microfinance Program.",pi:"Program developed",target:"100% program approved by MQA",due:"2026-2027"},
+{code:"SA3.1.2",thrust:"E",pic:["CD"],title:"Devise a 'learner support team' development plan and a mechanism to coordinate, monitor and evaluate the curriculum.",pi:"Plan approval status; mechanism implementation rate",target:"Approved by 2026; 50% operational by 2027",due:"2026-2027"},
+{code:"SA3.1.3",thrust:"E",pic:["DOK"],title:"Conduct university-wide review workshops of all programme/course outlines to integrate the Tawhidic worldview and values.",pi:"Workshops conducted per Kulliyyah; curriculum revision rate",target:"100% Kulliyyahs; 80% courses revised",due:"2027-2028"},
+{code:"SA3.1.4",thrust:"E",pic:["DOK"],title:"Introduce new interdisciplinary programmes integrating Islamic sciences with contemporary disciplines.",pi:"New programmes launched; student enrolment rate",target:"3+ programmes/year; 15+ students/programme",due:"2027-2030"},
+{code:"SA3.1.5",thrust:"E",pic:["CRP"],title:"Form a committee to address the shortage of textbooks and produce new textbooks aligned with the IOK framework.",pi:"Committee formation status; textbooks published",target:"Formed by 2026; 10+ textbooks by 2029",due:"2026-2029"},
+{code:"SA3.1.6",thrust:"E",pic:["HR","AA"],title:"Train academic staff and administrators on integrating the Tawhidic worldview and Islamic values into curriculum, management and research.",pi:"Training sessions per year",target:"1 session/year",due:"2026-2030"},
+{code:"SA3.1.7",thrust:"E",pic:["AA"],title:"Form a team to align relevant programme and course outlines with the Sustainable Development Goals.",pi:"SDG integration plan completion; programmes aligned",target:"100% completion",due:"2026-2027"},
+{code:"SA3.1.8",thrust:"E",pic:["CD"],title:"Design an action plan to pursue international recognition/accreditation of programmes to support student exchange and mobility.",pi:"Accreditation applications submitted; accreditations achieved",target:"5+ applications; 3+ accreditations",due:"2027-2030"},
+{code:"SA3.1.9",thrust:"E",pic:["DOK"],title:"Align new programmes with current market needs and industry requirements to ensure quality and employability.",pi:"Industry consultation sessions; industry-aligned programmes",target:"5+ sessions/year; 40% new programmes",due:"2026-2030"},
+{code:"SA3.2.1",thrust:"E",pic:["DOK"],title:"Revise the structure of relevant modules to incorporate research-based teaching and learning.",pi:"Modules revised; faculty adoption rate",target:"100% relevant modules by 2028; 85% adoption by 2030",due:"2026-2028"},
+{code:"SA3.2.2",thrust:"E",pic:["R&I"],title:"Require a Tawhidic framework checklist in relevant research activities.",pi:"Framework checklist completion; research compliance rate",target:"100% checklist by 2026; 70% compliance",due:"2026-2028"},
+{code:"SA3.2.3",thrust:"E",pic:["DOK"],title:"Incorporate research-based knowledge and assignments on Islamic and contemporary issues into relevant modules.",pi:"Assignments integrated",target:"60% of relevant modules",due:"2026-2028"},
+{code:"SA3.2.4",thrust:"E",pic:["CPS"],title:"Enhance the promotion of student research through forums, online and face-to-face.",pi:"Forums hosted per year",target:"2+ forums/year",due:"2026-2030"},
+{code:"SA3.2.5",thrust:"E",pic:["LIR"],title:"Introduce university-industry-community engagement programmes such as a \"Maqasid al-Shari'ah\" programme.",pi:"Industry partnerships formed; programme delivery rate",target:"10+ partners; 2+ programmes/year",due:"2027-2030"},
+{code:"SA3.3.1",thrust:"E",pic:["HR"],title:"Train academic staff on using technology and AI in teaching, experiential, participative and problem-based learning.",pi:"Training sessions per year; staff competency rate",target:"2+ sessions/year; 80% competency",due:"2026-2030"},
+{code:"SA3.3.2",thrust:"E",pic:["HR"],title:"Establish a mechanism to ensure academic ethical accountability (Akhlaqee Hisbaa).",pi:"Mechanism implementation",target:"60% operational by 2027",due:"2026-2027"},
+{code:"SA3.3.3",thrust:"E",pic:["AA"],title:"Establish a Pedagogical Innovation Lab to support professional development of academic staff.",pi:"Lab establishment status; staff trained per year",target:"Operational by 2027; 50+ staff/year",due:"2027-2029"},
+{code:"SA3.3.4",thrust:"E",pic:["AF","AA"],title:"Develop a university-wide policy to reduce administrative workload and improve efficiency.",pi:"Policy approval status; workload reduction rate",target:"Approved by 2026; 20% reduction",due:"2026-2027"},
+{code:"SA3.3.5",thrust:"E",pic:["LIR"],title:"Offer internationally competitive remuneration to recruit international scholars and lift research/teaching quality.",pi:"Scholars recruited per year",target:"1–2+ scholars/year",due:"2026-2030"},
+{code:"SA3.3.6",thrust:"E",pic:["ICT"],title:"Improve existing learning platforms so they are user-friendly and support effective teaching and learning.",pi:"Platform upgrades completed; user satisfaction rate",target:"50% of platforms; 85% satisfaction",due:"2026-2028"},
+{code:"SA3.3.7",thrust:"E",pic:["DOK"],title:"Enhance quality assessment practices across courses, with a focus on alternative assessment modes.",pi:"Assessment methods updated; use of alternative assessment",target:"70% of courses; 30% alternative",due:"2026-2028"},
+{code:"SA4.1.1",thrust:"E",pic:["ICT"],title:"Introduce simplified systems and apps for students, especially older or less tech-savvy users reliant on ISIMS.",pi:"App launch status",target:"Launched by 2026",due:"2026-2027"},
+{code:"SA4.1.10",thrust:"E",pic:["DOK"],title:"Collaborate with employers to develop programmes that close current skills gaps and deliver job-ready certification.",pi:"Employer partnerships formed; programmes developed",target:"3+ partners; 1–3 programmes/year",due:"2026-2030"},
+{code:"SA4.1.2",thrust:"E",pic:["LIR"],title:"Increase internship opportunities and placements to build practical exposure and employability.",pi:"Internship placements secured",target:"10+ new placements/year",due:"2026-2030"},
+{code:"SA4.1.3",thrust:"E",pic:["DOK"],title:"Enhance experiential learning activities across all relevant programmes and courses.",pi:"Activities integrated per programme; student engagement rate",target:"3+ activities/programme; 60% engagement",due:"2026-2028"},
+{code:"SA4.1.4",thrust:"E",pic:["LIB"],title:"Support and expand student access to resource databases and digital collections.",pi:"Database subscriptions added",target:"1–3+ databases",due:"2026-2030"},
+{code:"SA4.1.5",thrust:"E",pic:["ICT"],title:"Introduce an attendance management (clock-in) system to track student attendance and participation.",pi:"System implementation rate",target:"100% operational",due:"2026-2027"},
+{code:"SA4.1.6",thrust:"E",pic:["SSS"],title:"Establish an Industry-Academia Mentorship Programme for students.",pi:"Mentor-student pairing rate",target:"20% pairing",due:"2027-2030"},
+{code:"SA4.1.7",thrust:"E",pic:["SSS"],title:"Introduce structured training on emotional intelligence, leadership, computer literacy, communication and financial literacy for students.",pi:"Training modules launched",target:"2+ trainings/year",due:"2026-2030"},
+{code:"SA4.1.8",thrust:"E",pic:["SSS"],title:"Introduce student training on Islamic-oriented entrepreneurship to build employability and future ventures.",pi:"Programmes delivered per year",target:"2 programmes/year",due:"2027-2030"},
+{code:"SA4.1.9",thrust:"E",pic:["CPS"],title:"Provide and enhance conducive workspaces for full-time PhD students.",pi:"Workspaces allocated",target:"50% allocated",due:"2026-2028"},
+{code:"SA4.2.1",thrust:"E",pic:["HR","SSS"],title:"Introduce Mental Health First Aid training for the benefit of staff and students.",pi:"Training sessions per year",target:"2+ sessions/year",due:"2026-2030"},
+{code:"SA4.2.2",thrust:"E",pic:["AA"],title:"Introduce a Flexible Study Framework.",pi:"Framework implementation rate",target:"60% operational",due:"2026-2029"},
+{code:"SA4.2.3",thrust:"E",pic:["HR","SSS"],title:"Conduct structured Spiritual Enrichment Programmes for staff and students.",pi:"Programmes hosted per year",target:"6+ programmes/year",due:"2026-2030"},
+{code:"SA4.2.4",thrust:"E",pic:["FA","HR"],note:"source listed as \"FM, HR\"",title:"Enhance recreation and leisure facilities and experiences for staff and students to support work-life balance.",pi:"Facilities upgraded per campus",target:"1–2 facilities/campus",due:"2026-2028"},
+{code:"SA4.2.5",thrust:"E",pic:["FA","HR"],note:"source listed as \"FM, HR\"",title:"Promote wellness and health by establishing a day-care facility for staff and students.",pi:"Facility operational status",target:"Operational by 2029",due:"2027-2029"},
+{code:"SA4.3.1",thrust:"E",pic:["MKT","DOK","SA"],title:"Introduce digital and mobile-first marketing and student recruitment exercises each year.",pi:"Marketing campaigns per year",target:"6+ campaigns/year",due:"2026-2030"},
+{code:"SA4.3.2",thrust:"E",pic:["MKT","SA"],title:"Use social media and online tools to reach prospective local and international students.",pi:"Social media reach growth",target:"30% growth/year",due:"2026-2030"},
+{code:"SA4.3.3",thrust:"E",pic:["DOK"],title:"Increase the mix of in-person, online and hybrid programmes to accommodate a broader range of learners.",pi:"Hybrid programmes launched",target:"3+ programmes/year; 30% of students enrol",due:"2027-2030"},
+{code:"SA4.3.4",thrust:"E",pic:["AF"],title:"Provide incentives, packages and discounts for prospective international students (postgraduate/research and remote schemes).",pi:"Incentive packages offered; international enrolment growth",target:"3+ packages; 10% growth/year",due:"2026-2030"},
+{code:"SA4.3.5",thrust:"E",pic:["ICT","MKT"],title:"Ensure the university's website ranks well in search results for relevant programmes, making it easy for international students to find.",pi:"Work implementation completion",target:"100% completion",due:"2026-2028"},
+{code:"SA4.3.6",thrust:"E",pic:["SA"],title:"Simplify application forms and processes to reduce processing time and abandonment.",pi:"Application processing time",target:"50% time reduction",due:"2026-2027"},
+{code:"SA4.3.7",thrust:"E",pic:["LIR"],forceJoint:true,jointExtra:"Relevant Kulliyyah",title:"Partner with local businesses and institutions to create internships, careers and clear pathways to enrolment.",pi:"Partnerships formed per year",target:"5+ partners/year, driving enrolments",due:"2026-2030"},
+{code:"SA4.3.8",thrust:"E",pic:["AF"],title:"Hire recruitment agents to recruit postgraduate international students from strategic regions.",pi:"Agents contracted per region; postgraduate enrolment growth",target:"2+ agents; 15% growth/year",due:"2027-2030"},
+{code:"SA4.3.9",thrust:"E",pic:["MKT","SA"],title:"Organise marketing/recruitment events, in-person and virtual, so prospects can experience campus life and meet faculty.",pi:"Events hosted per year",target:"4+ events/year",due:"2026-2030"},
+
+// ================= A: Excellence in Research, Consultancy & Training =================
+{code:"SA5.1.11",thrust:"A",pic:["CPS"],title:"Plan and run sessions to share students' research findings with schools and the community.",pi:"Sessions per year",target:"3+ sessions/year",due:"2026-2030"},
+{code:"SA5.2.8",thrust:"A",pic:["CPS"],title:"Develop a platform where academic staff and postgraduate students can share their research outputs.",pi:"Platform live by 2027; materials shared",target:"100% completed by 2027; at least 10 materials",due:"2026-2027"},
+{code:"SA5.1.1",thrust:"A",pic:["CRP"],title:"Establish an IUM research fellowship programme for international researchers.",pi:"Fellowships awarded per year; research output per fellow",target:"1–4+ fellowships/year; 4+ publications/fellow",due:"2026-2030"},
+{code:"SA5.1.5",thrust:"A",pic:["CRP"],title:"Design and conduct research on Islamic and contemporary issues in collaboration with stakeholders and internal departments.",pi:"Research projects per year with stakeholder collaboration",target:"3–5+ projects/year",due:"2026-2030"},
+{code:"SA5.1.6",thrust:"A",pic:["CRP"],title:"Increase the number of publications in indexed and refereed journals/proceedings each year.",pi:"Publications per year; journal impact factor",target:"5–15+ publications/year; 1.0+ average IF",due:"2026-2030"},
+{code:"SA5.1.7",thrust:"A",pic:["CRP"],title:"Increase the number of principal investigators across all Kulliyyahs each year.",pi:"PIs per Kulliyyah; year-over-year growth",target:"3+ PIs/Kulliyyah; 10% growth/year",due:"2026-2030"},
+{code:"SA5.1.9",thrust:"A",pic:["CRP"],title:"Identify priority, high-focus research areas on contemporary religious issues that benefit society.",pi:"Areas identified; research projects per area",target:"10+ areas; 2+ projects/area",due:"2026-2027"},
+{code:"SA5.1.10",thrust:"A",pic:["CRP"],title:"Host an Islamic Knowledge Transfer Expo in collaboration with Islamic universities worldwide.",pi:"Expo frequency; international participants",target:"Biennial; 30% international",due:"2028, 2030"},
+{code:"SA6.1.12",thrust:"A",pic:["CRP"],title:"Establish endowed research chairs.",pi:"Chairs established; funding secured per chair",target:"3 chairs; MVR50K+ seed money/chair",due:"2026-2030"},
+{code:"SA5.2.3",thrust:"A",pic:["CRP"],title:"Develop research clusters, units and centres across disciplines to build mature research niches.",pi:"Clusters formed",target:"1–5+ clusters across 3 mature niches",due:"2026-2028"},
+{code:"SA5.2.6",thrust:"A",pic:["CRP"],title:"Implement a Research Equipment Sharing System.",pi:"System operational status; equipment sharing rate",target:"100% operational; 60% sharing",due:"2026-2027"},
+{code:"SA5.2.7",thrust:"A",pic:["CRP"],title:"Establish an Islamic Research Data Center to promote Islamic research.",pi:"Research data portal; research centre established",target:"100% by 2028",due:"2026-2027"},
+{code:"SA5.3.1",thrust:"A",pic:["CRP"],title:"Establish partnerships with Scopus-indexed journals and conferences.",pi:"Partnerships formed",target:"5+ partnerships",due:"2026-2030"},
+{code:"SA5.3.2",thrust:"A",pic:["CRP"],title:"Subscribe to relevant international Islamic research networks.",pi:"Network subscriptions",target:"3+ networks",due:"2026-2030"},
+{code:"SA5.3.3",thrust:"A",pic:["CRP"],title:"Launch an International Joint Research Program with partner institutions.",pi:"Joint projects per year; international co-authors",target:"5+ projects/year; 20% co-authors",due:"2027-2030"},
+{code:"SA5.3.4",thrust:"A",pic:["CRP"],title:"Introduce an Islamic Research Mobility Fund with partner universities and institutions.",pi:"Fund allocation rate; mobility grants awarded",target:"1–5+ grants/year",due:"2027-2030"},
+{code:"SA5.3.5",thrust:"A",pic:["CRP"],title:"Introduce policies and programmes to expand research activities beyond Asia to the wider Islamic world.",pi:"Non-Asian collaborations; research output from them",target:"1–3+ collaborations; 15+ publications",due:"2027-2030"},
+{code:"SA5.3.6",thrust:"A",pic:["CRP"],title:"Increase research collaborations in priority areas through research-based MoUs/MoAs.",pi:"MoUs signed per year; active projects per MoU",target:"1–3+ MoUs/year; 1+ project/MoU",due:"2026-2030"},
+{code:"SA6.1.1",thrust:"A",pic:["CRP"],title:"Secure funding through competitive private and international grants.",pi:"Grants secured per year",target:"1–3+ grants/year",due:"2026-2030"},
+{code:"SA6.1.2",thrust:"A",pic:["CRP"],title:"Launch an Islamic Research Impact Fund with corporate sponsors.",pi:"Corporate sponsors secured; fund size growth",target:"2–5+ sponsors; MVR50K+/year",due:"2027-2030"},
+{code:"SA6.1.4",thrust:"A",pic:["CRP"],title:"Introduce research endowment-based grants to support staff and postgraduate research in priority areas.",pi:"Grants established; research output per grant",target:"3 grants; 2+ publications/grant",due:"2027-2030"},
+{code:"SA6.1.5",thrust:"A",pic:["CRP"],title:"Introduce a matching grants scheme to support academic staff research with partner institutions.",pi:"Matching partners secured; leveraged funding ratio",target:"3+ partners/year; 1:1.5 ratio",due:"2027-2030"},
+{code:"SA6.2.3",thrust:"A",pic:["CRP"],title:"Introduce a guideline aligning Islamic scholarship with Maldivian societal needs and context.",pi:"Guideline completion rate; research projects aligned",target:"100% completion; 80% alignment",due:"2026-2027"},
+{code:"SA6.2.4",thrust:"A",pic:["CRP"],title:"Launch an Industry Sabbatical Program for staff to conduct research.",pi:"Sabbaticals awarded per year; research output per sabbatical",target:"1–3+ sabbaticals/year; 1+ output each",due:"2027-2030"},
+{code:"SA6.2.6",thrust:"A",pic:["CRP"],title:"Hire Islamic finance researchers to deepen this niche and open consultancy opportunities.",pi:"Researchers recruited; consultancy projects secured",target:"3 researchers; 3–5 projects/year",due:"2026-2028"},
+{code:"SA5.1.3",thrust:"A",pic:["DOK"],title:"Introduce subject- and Kulliyyah-specific journals.",pi:"Journals per Kulliyyah",target:"1 journal/Kulliyyah",due:"2026-2028"},
+{code:"SA5.2.2",thrust:"A",pic:["ICT"],title:"Establish research labs equipped with IoT/AI.",pi:"Labs equipped per campus; lab utilisation rate",target:"2 labs/campus; 50% utilisation",due:"2027-2029"},
+{code:"SA5.2.1",thrust:"A",pic:["LIR"],title:"Develop research collaboration platforms to facilitate research engagement.",pi:"Platform launch status",target:"Launched by 2028; 20+ collaborations",due:"2026-2028"},
+{code:"SA6.2.2",thrust:"A",pic:["LIR"],title:"Establish links with government, industry and private sector for Islamic advisory, consultancy and training services.",pi:"Advisory contracts per year",target:"3–5+ contracts/year",due:"2026-2030"},
+{code:"SA5.1.2",thrust:"A",pic:["R&I"],title:"Establish Scopus-indexed or Web of Science journals in priority disciplines.",pi:"Journals launched; indexing achievement",target:"2+ journals; 4+ indexed by 2030",due:"2027-2030"},
+{code:"SA5.1.4",thrust:"A",pic:["R&I"],title:"Hold an annual Research & Publication Excellence Awards to honour outstanding researchers and scholars.",pi:"Awards ceremony frequency",target:"Annual",due:"2028, 2030"},
+{code:"SA5.1.8",thrust:"A",pic:["R&I"],title:"Develop an Islamic Environmental Research Stewardship Framework.",pi:"Framework completion rate",target:"100% completion by 2027",due:"2027"},
+{code:"SA5.2.4",thrust:"A",pic:["R&I"],title:"Upgrade CRP into a full Research Management and Development Office.",pi:"Office restructuring completion",target:"100% completion",due:"2026-2027"},
+{code:"SA5.2.5",thrust:"A",pic:["R&I"],title:"Install research-related software for researchers and postgraduate students.",pi:"Software licences procured",target:"70% of researchers; 90% trained",due:"2026-2028"},
+{code:"SA5.2.9",thrust:"A",pic:["R&I"],title:"Launch an Islamic Fintech Research & Training Lab.",pi:"Labs established; research/training outputs",target:"1 lab; at least 5 outputs/year",due:"2028-2030"},
+{code:"SA6.1.3",thrust:"A",pic:["R&I"],title:"Establish a crowdfunding platform for Islamic research in niche areas.",pi:"Platform launch status; funds raised per campaign",target:"Launched by 2029; MVR10K+/campaign",due:"2027-2029"},
+{code:"SA6.2.1",thrust:"A",pic:["R&I"],title:"Develop policies and incentives enabling staff to provide Islamic research, consultancy and training in their fields.",pi:"Policy approval status; staff engaged in consultancy/training",target:"Approved by 2026; 5–10+ staff/year",due:"2026-2027"},
+{code:"SA6.2.5",thrust:"A",pic:["R&I"],title:"Introduce policies to facilitate translational research delivering solutions to community problems.",pi:"Policy implementation rate; community solutions delivered",target:"100% implementation; 2–5+ solutions/year",due:"2026-2028"},
+
+// ================= D: Commitment to Nation Building & Community Engagement =================
+{code:"SA7.1.1",thrust:"D",pic:["AF","AA"],title:"Deploy an Atoll Mobile Academy to bring training to island communities.",pi:"Islands covered per year; training sessions per island",target:"2–3 islands/year; 2–4+ sessions/island",due:"2027-2030"},
+{code:"SA7.1.2",thrust:"D",pic:["R&I"],title:"Establish Community Innovation Grants.",pi:"Grants awarded per year; community projects launched",target:"2+ grants/year; 2+ projects/year",due:"2026-2030"},
+{code:"SA7.1.3",thrust:"D",pic:["LIR"],title:"Create a Community Shari'ah Advisory Service for the public.",pi:"Advisory sessions per month",target:"3 sessions/month",due:"2026-2028"},
+{code:"SA7.1.4",thrust:"D",pic:["LIR"],title:"Develop a Youth Islamic Leadership Program to support youth roles in nation building.",pi:"Youths trained per year",target:"50+ youths/year",due:"2026-2030"},
+{code:"SA7.1.5",thrust:"D",pic:["LIR"],title:"Introduce university-community engagement programmes through partnerships with local councils and CSR projects.",pi:"Programmes per year",target:"8+ programmes/year",due:"2026-2030"},
+{code:"SA7.1.6",thrust:"D",pic:["AF"],title:"Create an Islamic Community Development Fund.",pi:"Fund capitalisation size",target:"MVR100K/year",due:"2027-2029"},
+{code:"SA7.1.7",thrust:"D",pic:["LIR","SSS"],title:"Establish Global Islamic Volunteer Teams so students can engage internationally.",pi:"Volunteer teams deployed; international projects per year",target:"3+ teams/year; 2–5+ projects/year",due:"2028-2030"},
+{code:"SA7.2.1",thrust:"D",pic:["CB"],title:"Develop an annual CSR calendar.",pi:"Calendar completion rate; CSR activities executed",target:"100% completion; 10+ activities/year",due:"2026-2030"},
+{code:"SA7.2.2",thrust:"D",pic:["P"],title:"Launch a Green Atoll Initiative.",pi:"Islands engaged per year; sustainability projects",target:"2 islands/year; 2+ projects/island",due:"2027-2030"},
+{code:"SA7.2.3",thrust:"D",pic:["LIR"],title:"Establish an Islamic CSR Network.",pi:"Companies onboarded; network events per year",target:"3+ companies; 4 events/year",due:"2026-2029"},
+{code:"SA7.2.4",thrust:"D",pic:["MKT"],title:"Grow IUM's YouTube channel and other platforms to serve the community.",pi:"Content pieces per month",target:"4+ pieces/month",due:"2026-2030"},
+{code:"SA7.2.5",thrust:"D",pic:["LIR"],title:"Design and run community projects that strengthen social harmony and cohesion.",pi:"Projects per year; community feedback score",target:"2+ projects/year; 4.0/5 rating",due:"2026-2030"},
+{code:"SA7.2.6",thrust:"D",pic:["LIR"],title:"Design and promote Islamic leadership and community development programmes for institutions across the Maldives.",pi:"Programmes delivered per year",target:"4+ programmes/year; 15+ institutions participating",due:"2027-2030"},
+{code:"SA7.3.1",thrust:"D",pic:["AA"],title:"Introduce new academic programmes on environmental protection and sustainable development from an Islamic perspective.",pi:"Relevant Kulliyyah established; programmes launched",target:"2+ programmes/year",due:"2027-2030"},
+{code:"SA7.3.2",thrust:"D",pic:["LIR"],title:"Integrate relevant SDGs and best practices into community engagement programmes.",pi:"SDGs integrated per programme; community awareness rate",target:"3+ SDGs/programme",due:"2026-2028"},
+{code:"SA7.3.3",thrust:"D",pic:["SSS"],title:"Introduce a seminar for all students on the Islamic worldview of sustainable development and environmental protection.",pi:"Seminar completion rate",target:"100% completion",due:"2026-2027"},
+{code:"SA7.3.4",thrust:"D",pic:["KSL"],title:"Run collaborative programmes with foreign law schools on the legal aspects of environmental protection and sustainability.",pi:"Partnerships formed",target:"1 partnership/year; 1 workshop/year",due:"2027-2030"},
+{code:"SA7.3.5",thrust:"D",pic:["R&I"],title:"Pursue national and international collaborative, translational research on sustainable development from an Islamic comparative perspective.",pi:"Research projects per year; policy recommendations",target:"1+ projects/year; 1+ recommendations",due:"2027-2030"},
+{code:"SA7.3.6",thrust:"D",pic:["MKT"],title:"Run social media campaigns on environmental sustainability from an Islamic perspective.",pi:"Campaigns per year",target:"1+ campaigns/year",due:"2026-2030"},
+
+// ================= I: Digital Transformation & Modern Infrastructure =================
+{code:"SA8.1.1",thrust:"I",pic:["ICT"],title:"Strengthen the integration of Moodle and ISIMS.",pi:"Integration completion rate",target:"70% completion",due:"2026-2028"},
+{code:"SA8.1.10",thrust:"I",pic:["ICT"],title:"Develop a strategy to make information and systems accessible via mobile devices.",pi:"Strategy completion rate",target:"100% completion",due:"2026-2029"},
+{code:"SA8.1.11",thrust:"I",pic:["LIB"],title:"Establish a digital repository/archive for staff and students.",pi:"Repository launch status",target:"1 million pieces of content by 2030",due:"2030"},
+{code:"SA8.1.12",thrust:"I",pic:["AF"],title:"Establish an audio-visual studio.",pi:"Studio operational status",target:"Operational by 2028",due:"2026-2028"},
+{code:"SA8.1.2",thrust:"I",pic:["ICT"],title:"Develop ISIMS to adequately support direct online or app-based operations.",pi:"ISIMS upgrade completion",target:"60% completion",due:"2026-2029"},
+{code:"SA8.1.3",thrust:"I",pic:["ICT"],title:"Make digital systems user-friendly, especially for older or less tech-savvy users.",pi:"Usability testing score; elderly user adoption rate",target:"4.5/5 rating; 60% adoption",due:"2026-2029"},
+{code:"SA8.1.4",thrust:"I",pic:["ICT"],title:"Streamline administrative processes into a single-window digital system for all university services.",pi:"Processes digitised; processing time reduction",target:"60% of processes; 40% time reduction",due:"2026-2028"},
+{code:"SA8.1.5",thrust:"I",pic:["LIB"],title:"Deploy the Islamic Digital Library.",pi:"Resources added per year",target:"1,000+ resources/year",due:"2027-2029"},
+{code:"SA8.1.6",thrust:"I",pic:["ICT"],title:"Launch a Smart Campus App with an AI assistant.",pi:"App launch status",target:"Launched by 2029",due:"2029"},
+{code:"SA8.1.7",thrust:"I",pic:["HR","SSS"],title:"Conduct digital skills training for staff and students.",pi:"Training sessions per year",target:"3–5+ sessions/year",due:"2026-2030"},
+{code:"SA8.1.8",thrust:"I",pic:["IEQI"],title:"Conduct an efficiency assessment of existing systems to check usability and identify improvements.",pi:"Assessment completion rate",target:"Assessment completed",due:"2026-2027"},
+{code:"SA8.1.9",thrust:"I",pic:["HR"],title:"Provide specialised ICT-tools training for staff (research and classroom teaching tools, especially online teaching).",pi:"Training hours per staff member",target:"7–10 hours/staff",due:"2026-2030"},
+{code:"SA8.2.1",thrust:"I",pic:["FA"],title:"Install IoT-enabled smart classrooms and labs.",pi:"Classrooms/labs upgraded",target:"3–5+ spaces/campus",due:"2027-2029"},
+{code:"SA8.2.2",thrust:"I",pic:["IEQI"],title:"Achieve ISO 27001 certification.",pi:"Certification application status; audit pass rate",target:"Applied by 2027; 100% pass",due:"2026-2028"},
+{code:"SA8.2.3",thrust:"I",pic:["LIB"],title:"Establish physical libraries in the Learning Centres across the atolls.",pi:"Libraries established",target:"1–5+ libraries",due:"2027-2030"},
+{code:"SA8.2.4",thrust:"I",pic:["FA"],title:"Acquire new atoll infrastructure to support the university's future expansion.",pi:"Infrastructure acquired per year",target:"1–2+ sites/year",due:"2027-2030"},
+{code:"SA8.2.5",thrust:"I",pic:["AF"],title:"Review and upgrade facilities to build an environment that attracts more local and international students.",pi:"Facilities upgraded per year",target:"1–3+ facilities/year",due:"2026-2028"},
+{code:"SA8.2.6",thrust:"I",pic:["HR"],title:"Launch a Cybersecurity Awareness Program.",pi:"Training sessions per year",target:"2–4+ sessions/year",due:"2026-2030"},
+{code:"SA8.2.7",thrust:"I",pic:["HR"],title:"Develop Incident Response Playbooks.",pi:"Playbooks completed",target:"100% completion",due:"2026-2027"},
+{code:"SA8.3.1",thrust:"I",pic:["IEQI"],title:"Achieve Carbon Neutrality Certification.",pi:"Certification application status; carbon footprint reduction",target:"Applied by 2028; 50% reduction",due:"2027-2030"},
+{code:"SA8.3.10",thrust:"I",pic:["MKT"],title:"Increase staff and student involvement in community sustainability events and related social media campaigns.",pi:"Events participated per year; staff/student volunteer rate",target:"5+ events/year; 15% volunteer rate",due:"2026-2030"},
+{code:"SA8.3.2",thrust:"I",pic:["FA"],title:"Install renewable energy systems (solar/wind).",pi:"Renewable capacity installed; energy cost reduction",target:"Capacity target set; 30% cost reduction",due:"2027-2030"},
+{code:"SA8.3.3",thrust:"I",pic:["FA"],title:"Implement a Waste Reduction (zero-waste) Program.",pi:"Waste diversion rate",target:"40% diversion",due:"2026-2030"},
+{code:"SA8.3.4",thrust:"I",pic:["FA"],title:"Develop water conservation systems.",pi:"Systems installed per campus; water usage reduction",target:"1–2 systems/campus; 25% reduction",due:"2027-2029"},
+{code:"SA8.3.5",thrust:"I",pic:["IEQI"],title:"Apply for Green Campus Certification.",pi:"Certification status; compliance score",target:"Applied by 2028; 65% compliance",due:"2028-2030"},
+{code:"SA8.3.6",thrust:"I",pic:["FA"],title:"Develop a policy and comprehensive plan to reduce the university's carbon footprint.",pi:"Policy approval status; annual reduction rate",target:"Approved by 2026; 5% reduction/year",due:"2026-2027"},
+{code:"SA8.3.7",thrust:"I",pic:["FA"],title:"Renovate and upgrade buildings for energy conservation and efficiency (e.g. solar energy).",pi:"Buildings renovated per year; energy savings per building",target:"1–2+ buildings/year; 10–15%+ savings",due:"2027-2030"},
+{code:"SA8.3.8",thrust:"I",pic:["HR"],title:"Reward the university's sustainability-champion Kulliyyah, department or unit.",pi:"Awards per year; recognition policy developed",target:"1–3+ awards/year",due:"2026-2030"},
+{code:"SA8.3.9",thrust:"I",pic:["HR","SSS"],title:"Educate students and staff on sustainability concepts, ethics and best practices for daily life.",pi:"Training sessions per year",target:"3–5+ sessions/year",due:"2026-2030"},
+
+// ================= N: Governance, Leadership & Talent Development =================
+{code:"SA10.1.1",thrust:"N",pic:["AF"],title:"Establish a Wellness Center.",pi:"Center operational status",target:"Operational by 2028",due:"2028"},
+{code:"SA10.1.2",thrust:"N",pic:["HR"],title:"Enhance the Flexible Work Framework.",pi:"Framework adoption rate",target:"85% adoption",due:"2026"},
+{code:"SA10.1.3",thrust:"N",pic:["HR","SSS"],title:"Launch a Spiritual Enrichment Program for staff and students.",pi:"Programme frequency",target:"2 programmes per semester",due:"2026-2030"},
+{code:"SA10.1.4",thrust:"N",pic:["AF"],title:"Create recreation and sports facilities across campuses.",pi:"Facilities per campus",target:"1–3+ facilities/campus",due:"2027-2030"},
+{code:"SA10.1.5",thrust:"N",pic:["AF"],title:"Enhance staff support services — counselling, prayer space and wellness resources — as part of institutional governance.",pi:"Service expansion rate",target:"50% expansion",due:"2026-2028"},
+{code:"SA10.1.6",thrust:"N",pic:["AF"],title:"Launch the IUM Family Support Program.",pi:"Programme enrolment rate",target:"50% enrolment",due:"2027-2030"},
+{code:"SA10.1.7",thrust:"N",pic:["AA"],title:"Implement a Life-Long Learning Platform.",pi:"Platform launch status",target:"Launched by 2027; 1–5+ courses/year",due:"2027"},
+{code:"SA10.2.1",thrust:"N",pic:["HR"],title:"Strengthen the workload policy guideline, clearly defining roles for work efficiency.",pi:"Policy enhancement; workload reduction rate",target:"50% reduction",due:"2026-2027"},
+{code:"SA10.2.2",thrust:"N",pic:["HR"],title:"Launch a Remote Work Infrastructure.",pi:"Infrastructure readiness",target:"50% ready",due:"2027"},
+{code:"SA10.2.3",thrust:"N",pic:["HR"],title:"Introduce Job-Sharing and Learning Programs.",pi:"Programmes offered per year; participation rate",target:"1–4+ programmes/year; 15% participation",due:"2027-2030"},
+{code:"SA10.2.4",thrust:"N",pic:["HR"],title:"Revise and implement Appreciation & Recognition Programs for academic and administrative staff.",pi:"Programmes per year",target:"1 programme/year",due:"2026-2027"},
+{code:"SA9.1.1",thrust:"N",pic:["CB"],title:"Establish a Shari'ah Supervisory Committee/Board to advise on Islamic governance, management and ethical accountability.",pi:"Committee formation status; first meeting held",target:"Formed by 2026; meeting held",due:"2026"},
+{code:"SA9.1.2",thrust:"N",pic:["CB"],title:"Review university-wide policies and standards for alignment with Shari'ah governance.",pi:"Policies reviewed",target:"85% of policies",due:"2026-2027"},
+{code:"SA9.1.3",thrust:"N",pic:["IEQI"],title:"Introduce and implement a Balanced Scorecard to measure university performance.",pi:"Scorecard deployment/awareness rate; review frequency",target:"90% deployment; yearly reviews",due:"2026-2028"},
+{code:"SA9.1.4",thrust:"N",pic:["IEQI"],title:"Adopt Islamic ISO Compliance Certification.",pi:"Certification application status; compliance audit score",target:"Applied by 2028; 80% compliance",due:"2027-2029"},
+{code:"SA9.1.5",thrust:"N",pic:["IEQI"],title:"Enhance quality standards and their application across management and academic activities.",pi:"QA audits per year; non-compliance resolution rate",target:"1 audit/year; 80% resolution",due:"2026-2030"},
+{code:"SA9.1.6",thrust:"N",pic:["HR"],title:"Strengthen the staff appraisal system, including its form and a new appraisal portal.",pi:"Appraisal cycle completion rate",target:"100% completion",due:"2026-2027"},
+{code:"SA9.1.7",thrust:"N",pic:["IEQI"],title:"Develop and implement a Service Quality Index.",pi:"SQI implementation rate; annual SQI improvement",target:"100% implementation; maintain 85% every year",due:"2027-2029"},
+{code:"SA9.2.1",thrust:"N",pic:["HR"],title:"Launch a yearly Leadership Training Program for academic and administrative staff.",pi:"Training sessions per year; participant competency gain",target:"4 sessions/year; 75% participant satisfaction",due:"2026-2030"},
+{code:"SA9.2.2",thrust:"N",pic:["HR"],title:"Integrate an Islamic Work Culture Initiative into the existing work culture.",pi:"Initiative rollout rate",target:"50% rollout",due:"2026-2028"},
+{code:"SA9.2.3",thrust:"N",pic:["HR"],title:"Equip Kulliyyah and administrative units with sufficient staffing to work professionally to quality standards.",pi:"Staff requirement policy developed; required staff recruited",target:"80% gap filled",due:"2026-2030"},
+{code:"SA9.2.4",thrust:"N",pic:["HR"],title:"Develop a comprehensive staff development plan for 2026–2030.",pi:"Plan completion rate",target:"100% completion",due:"2026"},
+{code:"SA9.3.1",thrust:"N",pic:["AF"],title:"Implement Digital Workflow Automation.",pi:"Processes automated per year; processing time reduction",target:"3–5+ processes/year; 60% reduction",due:"2027-2029"},
+{code:"SA9.3.2",thrust:"N",pic:["AF"],title:"Develop an AI-Powered Decision Support System.",pi:"System deployment status",target:"Deployed by 2028",due:"2028"},
+{code:"SA9.3.3",thrust:"N",pic:["AF"],title:"Implement an Enterprise Risk Management System.",pi:"System implementation rate; risk mitigation rate",target:"80% implementation; 60% mitigation",due:"2027-2029"},
+
+// ================= G: Financial Independence & Sustainability =================
+{code:"SA11.1.1",thrust:"G",pic:["CB"],title:"Form a taskforce to develop an integrated business model for the university over the next 5 years.",pi:"Taskforce formation status; model completion rate",target:"Formed by 2026; 100% completion",due:"2026"},
+{code:"SA11.1.2",thrust:"G",pic:["AF"],title:"Establish Endowment Funds.",pi:"Fund capitalisation size; annual disbursement rate",target:"MVR2M+ by 2030; 5% disbursement",due:"2026-2030"},
+{code:"SA11.1.3",thrust:"G",pic:["CCE"],title:"Launch Executive Training Programmes in Islamic and integrated fields.",pi:"Programmes launched; revenue generated per programme",target:"5+ programmes; MVR100K+/programme",due:"2026-2030"},
+{code:"SA11.1.7",thrust:"G",pic:["MKT"],title:"Develop mechanisms to sell and promote university merchandise.",pi:"Products launched per year; merchandise revenue",target:"3+ products/year; MVR10K+/year",due:"2026-2030"},
+{code:"SA11.2.1",thrust:"G",pic:["AF"],title:"Implement Zero-Based Budgeting.",pi:"Budget cycles using ZBB; cost savings achieved",target:"80% of cycles; 15% savings",due:"2026-2028"},
+{code:"SA11.2.2",thrust:"G",pic:["AF"],title:"Introduce a Zakat-Eligible Scholarship Fund to attract local and international students.",pi:"Scholarships awarded per year",target:"5–10+ scholarships/year",due:"2026-2030"},
+{code:"SA11.3.2",thrust:"G",pic:["IEQI"],title:"Launch an Energy Conservation Program.",pi:"Energy audits per year; conservation rate",target:"1 audit/year; 15% conservation",due:"2026-2030"},
+{code:"SA11.3.3",thrust:"G",pic:["LIR"],title:"Enhance and support cost-sharing arrangements with other institutions.",pi:"Learning & teaching partnerships per year; shared course costs",target:"3+ partnerships/year; 15% cost reduction",due:"2026-2030"},
+];
+
+// ---------------------------------------------------------------
+// Year position math: 2026 -> 0%, 2030 -> 100%
+// ---------------------------------------------------------------
+function yearPos(y){ return (y-2026)*25; }
+function parseSegment(tok){
+  tok = tok.trim();
+  let m = tok.match(/^Mid\s+(\d{4})$/);
+  if(m) return { type:'point', x: yearPos(parseInt(m[1]))+12.5, label: tok };
+  m = tok.match(/^(\d{4})$/);
+  if(m) return { type:'point', x: yearPos(parseInt(m[1])), label: tok };
+  m = tok.match(/^(\d{4})\s*[–-]\s*(\d{4})$/);
+  if(m) return { type:'bar', x1: yearPos(parseInt(m[1])), x2: yearPos(parseInt(m[2])), label: tok };
+  return { type:'point', x:0, label: tok };
+}
+function parseDue(due){ return due.split(',').map(parseSegment); }
+function firstX(due){
+  const segs = parseDue(due);
+  return Math.min(...segs.map(s => s.type==='bar' ? s.x1 : s.x));
+}
+
+function buildRuler(){
+  return [2026,2027,2028,2029,2030].map(y=>`<span class="tick" style="left:${yearPos(y)}%">${y}</span>`).join('');
+}
+function buildGridlines(){
+  return [2026,2027,2028,2029,2030].map(y=>`<span class="gridline" style="left:${yearPos(y)}%"></span>`).join('');
+}
+
+// ---------------------------------------------------------------
+// Build page
+// ---------------------------------------------------------------
+const unitsEl = document.getElementById('units');
+const jumpEl = document.getElementById('jumpnav');
+const legendGrid = document.getElementById('legend-grid');
+const scopeStrip = document.getElementById('scope-strip');
+
+// scope numbers
+const totalActions = TASKS.length;
+const activeUnits = new Set();
+TASKS.forEach(t=>t.pic.forEach(p=>activeUnits.add(p)));
+scopeStrip.innerHTML = `
+  <div class="scope-item"><span class="num">${totalActions}</span><span class="lab">strategic actions</span></div>
+  <div class="scope-item"><span class="num">${activeUnits.size}</span><span class="lab">responsible units</span></div>
+  <div class="scope-item"><span class="num">7</span><span class="lab">strategic thrusts</span></div>
+  <div class="scope-item"><span class="num">2026–2030</span><span class="lab">plan horizon</span></div>
+`;
+
+// order units by task count desc, but keep a stable readable order: alphabetical by code is fine too.
+const unitOrder = ALL_UNITS.map(u=>u.code).filter(code => TASKS.some(t=>t.pic.includes(code)));
+
+unitOrder.forEach(pic=>{
+  const tasks = TASKS.filter(t=>t.pic.includes(pic)).sort((a,b)=>firstX(a.due)-firstX(b.due));
+  if(!tasks.length) return;
+  const color = colorFor(pic);
+  const slug = slugFor(pic);
+
+  const a = document.createElement('a');
+  a.href = '#unit-'+slug;
+  a.style.setProperty('--nc', color);
+  a.innerHTML = `${pic} <span class="cnt">${tasks.length}</span>`;
+  jumpEl.appendChild(a);
+
+  const section = document.createElement('div');
+  section.className = 'unit-section';
+  section.id = 'unit-'+slug;
+  section.style.setProperty('--uc', color);
+
+  let rowsHtml = '';
+  tasks.forEach(t=>{
+    const segs = parseDue(t.due);
+    let trackInner = buildGridlines();
+    segs.forEach(pos=>{
+      if(pos.type === 'point'){
+        trackInner += `<span class="seg-label" style="left:${pos.x}%">${pos.label}</span>`;
+        trackInner += `<span class="dot" style="left:${pos.x}%"></span>`;
+      } else {
+        const w = pos.x2 - pos.x1;
+        trackInner += `<span class="seg-label" style="left:${pos.x1}%">${pos.label}</span>`;
+        trackInner += `<span class="bar" style="left:${pos.x1}%; width:${w}%"></span>`;
+      }
+    });
+    const isJoint = t.pic.length > 1 || t.forceJoint;
+    const otherOwners = t.pic.filter(p=>p!==pic).concat(t.jointExtra ? [t.jointExtra] : []);
+    const jointChip = isJoint ? `<span class="joint-chip">joint · ${otherOwners.join(', ')}</span>` : '';
+    const noteChip = t.note ? `<span class="thrust-chip">${t.note}</span>` : '';
+    rowsHtml += `
+      <div class="task-row">
+        <div class="track">${trackInner}</div>
+        <div class="detail">
+          <div class="task-top">
+            <span class="task-code">${t.code}</span>
+            <span class="thrust-chip">${THRUSTS[t.thrust]}</span>
+            ${jointChip}
+            ${noteChip}
+          </div>
+          <div class="task-title">${t.title}</div>
+          <div class="task-meta">
+            <span><b>Success measure:</b> ${t.pi}</span>
+            <span><b>Target:</b> ${t.target}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  section.innerHTML = `
+    <div class="unit-head">
+      <h2>${nameFor(pic)}</h2>
+      <span class="unit-code">${pic}</span>
+      <span class="unit-count">${tasks.length} action${tasks.length>1?'s':''}</span>
+      <span class="unit-chevron">▸</span>
+    </div>
+    <div class="unit-body">
+      <div class="ruler-row"><div></div><div class="ruler-track">${buildRuler()}</div></div>
+      ${rowsHtml}
+    </div>
+  `;
+  section.querySelector('.unit-head').addEventListener('click', ()=>{
+    section.classList.toggle('open');
+  });
+  unitsEl.appendChild(section);
+});
+
+// expand/collapse all
+let allOpen = false;
+document.getElementById('expandAllBtn').addEventListener('click', (e)=>{
+  allOpen = !allOpen;
+  document.querySelectorAll('.unit-section').forEach(s=>s.classList.toggle('open', allOpen));
+  e.target.textContent = allOpen ? 'Collapse all' : 'Expand all';
+});
+
+// jump link opens target section
+jumpEl.querySelectorAll('a').forEach(a=>{
+  a.addEventListener('click', ()=>{
+    const id = a.getAttribute('href').slice(1);
+    const target = document.getElementById(id);
+    if(target) target.classList.add('open');
+  });
+});
+
+// reference legend (all 21 units, all now have tasks)
+ALL_UNITS.forEach(u=>{
+  const count = TASKS.filter(t=>t.pic.includes(u.code)).length;
+  const row = document.createElement('div');
+  row.className = 'legend-row' + (count ? ' has-tasks' : '');
+  row.style.setProperty('--lc', colorFor(u.code));
+  row.innerHTML = `
+    <span class="lg-code">${u.code}</span>
+    <span class="lg-name">${u.name}</span>
+    <span class="lg-flag">${count} action${count===1?'':'s'}</span>
+  `;
+  legendGrid.appendChild(row);
+});
+
+// ---------------------------------------------------------------
+// Joint / multi-owner tasks — gathered at the bottom
+// ---------------------------------------------------------------
+const jointListEl = document.getElementById('joint-list');
+const jointTasks = TASKS.filter(t => t.pic.length > 1 || t.forceJoint).sort((a,b)=>firstX(a.due)-firstX(b.due));
+document.querySelector('#joint-section h2').textContent =
+  `Joint tasks — shared across multiple units (${jointTasks.length})`;
+
+jointTasks.forEach(t=>{
+  const segs = parseDue(t.due);
+  let trackInner = buildGridlines();
+  segs.forEach(pos=>{
+    if(pos.type === 'point'){
+      trackInner += `<span class="seg-label" style="left:${pos.x}%; color:var(--ink-soft)">${pos.label}</span>`;
+      trackInner += `<span class="dot" style="left:${pos.x}%; --uc:var(--ink-soft)"></span>`;
+    } else {
+      const w = pos.x2 - pos.x1;
+      trackInner += `<span class="seg-label" style="left:${pos.x1}%; color:var(--ink-soft)">${pos.label}</span>`;
+      trackInner += `<span class="bar" style="left:${pos.x1}%; width:${w}%; --uc:var(--ink-soft)"></span>`;
+    }
+  });
+  const chips = t.pic.map(p => `<span class="joint-pic-chip" style="background:${colorFor(p)}">${p} · ${nameFor(p)}</span>`).join('')
+    + (t.jointExtra ? `<span class="joint-pic-chip" style="background:var(--ink-soft)">${t.jointExtra}</span>` : '');
+  const noteChip = t.note ? `<span class="thrust-chip">${t.note}</span>` : '';
+  const row = document.createElement('div');
+  row.className = 'joint-row';
+  row.innerHTML = `
+    <div class="track">${trackInner}</div>
+    <div class="detail">
+      <div class="joint-pics">${chips}</div>
+      <div class="task-top">
+        <span class="task-code">${t.code}</span>
+        <span class="thrust-chip">${THRUSTS[t.thrust]}</span>
+        ${noteChip}
+      </div>
+      <div class="task-title">${t.title}</div>
+      <div class="task-meta">
+        <span><b>Success measure:</b> ${t.pi}</span>
+        <span><b>Target:</b> ${t.target}</span>
+      </div>
+    </div>
+  `;
+  jointListEl.appendChild(row);
+});
+</script>
+</body>
+</html>
